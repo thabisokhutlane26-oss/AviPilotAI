@@ -1,4 +1,4 @@
-name: Build PipPilot AI
+name: Build AviPilot AI
 
 on:
   workflow_dispatch:
@@ -11,21 +11,21 @@ permissions:
 
 jobs:
   build:
-    name: Build PipPilot AI APK
+    name: Build AviPilot AI APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - name: Set up Java
-        uses: actions/setup-java@v5
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: '8.9'
 
@@ -34,9 +34,8 @@ jobs:
         run: |
           set -e
 
-          mkdir -p app/src/main/java/com/pippilot/ai
+          mkdir -p app/src/main/java/com/avipilot/ai
           mkdir -p app/src/main/res/values
-          mkdir -p app/src/main/res/drawable
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -55,7 +54,7 @@ jobs:
               }
           }
 
-          rootProject.name = "PipPilotAI"
+          rootProject.name = "AviPilotAI"
           include(":app")
           EOF
 
@@ -79,11 +78,11 @@ jobs:
           }
 
           android {
-              namespace 'com.pippilot.ai'
+              namespace 'com.avipilot.ai'
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.pippilot.ai'
+                  applicationId 'com.avipilot.ai'
                   minSdk 24
                   targetSdk 35
                   versionCode 1
@@ -115,11 +114,12 @@ jobs:
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <application
                   android:allowBackup="true"
-                  android:label="PipPilot AI"
+                  android:label="AviPilot AI"
                   android:supportsRtl="true"
                   android:theme="@style/AppTheme">
 
@@ -141,6 +141,7 @@ jobs:
 
           cat > app/src/main/res/values/colors.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <resources>
               <color name="black">#000000</color>
               <color name="white">#FFFFFF</color>
@@ -149,25 +150,27 @@ jobs:
 
           cat > app/src/main/res/values/themes.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <resources>
 
-              <style name="AppTheme"
+              <style
+                  name="AppTheme"
                   parent="Theme.Material3.DayNight.NoActionBar">
 
                   <item name="android:fontFamily">sans</item>
-                  <item name="android:windowLightStatusBar">false</item>
 
               </style>
 
           </resources>
           EOF
 
-          cat > app/src/main/java/com/pippilot/ai/MainActivity.kt <<'EOF'
-          package com.pippilot.ai
+          cat > app/src/main/java/com/avipilot/ai/MainActivity.kt <<'EOF'
+          package com.avipilot.ai
 
-          import android.os.Bundle
           import android.graphics.Color
+          import android.os.Bundle
           import android.view.Gravity
+          import android.widget.Button
           import android.widget.LinearLayout
           import android.widget.TextView
           import androidx.appcompat.app.AppCompatActivity
@@ -181,32 +184,43 @@ jobs:
                       orientation = LinearLayout.VERTICAL
                       gravity = Gravity.CENTER
                       setPadding(40, 40, 40, 40)
+                      setBackgroundColor(Color.WHITE)
                   }
 
                   val title = TextView(this).apply {
-                      text = "PipPilot AI"
-                      textSize = 32f
-                      setTextColor(Color.BLACK)
+                      text = "AviPilot AI"
+                      textSize = 34f
                       gravity = Gravity.CENTER
+                      setTextColor(Color.BLACK)
                   }
 
                   val subtitle = TextView(this).apply {
-                      text = "Aviator Prediction Assistant"
+                      text = "Aviator Analysis Assistant"
                       textSize = 18f
-                      setTextColor(Color.DKGRAY)
                       gravity = Gravity.CENTER
+                      setTextColor(Color.DKGRAY)
                   }
 
-                  val status = TextView(this).apply {
-                      text = "\nPipPilot AI is ready."
-                      textSize = 20f
-                      setTextColor(Color.BLACK)
+                  val result = TextView(this).apply {
+                      text = "Ready for analysis"
+                      textSize = 22f
                       gravity = Gravity.CENTER
+                      setTextColor(Color.BLACK)
+                      setPadding(0, 50, 0, 30)
+                  }
+
+                  val button = Button(this).apply {
+                      text = "ANALYZE"
+                      setOnClickListener {
+                          result.text =
+                              "Analysis complete\n\nUse historical data responsibly."
+                      }
                   }
 
                   root.addView(title)
                   root.addView(subtitle)
-                  root.addView(status)
+                  root.addView(result)
+                  root.addView(button)
 
                   setContentView(root)
               }
@@ -214,17 +228,25 @@ jobs:
           EOF
 
       - name: Generate Gradle wrapper
+        shell: bash
         run: |
           gradle wrapper --gradle-version 8.9
 
       - name: Build Debug APK
+        shell: bash
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
 
-      - name: Upload PipPilot AI APK
-        uses: actions/upload-artifact@v4
+      - name: Verify APK
+        shell: bash
+        run: |
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          ls -lh app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v5
         with:
-          name: PipPilot-AI-v1
+          name: AviPilot-AI-v1
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
